@@ -8,8 +8,6 @@ import type { GenerateQuizQuestionsOutput } from '@/ai/flows/generate-quiz-quest
 import type { ValidateDifficultyRankingOutput } from '@/ai/flows/validate-difficulty-ranking';
 import { z } from 'zod';
 
-
-// Define the Zod schema for a single question's result.
 const QuestionResultSchema = z.object({
   question: z.string(),
   options: z.array(z.string()),
@@ -18,14 +16,20 @@ const QuestionResultSchema = z.object({
   isCorrect: z.boolean(),
 });
 
-
-// Define the Zod schema for the input of the summarizePerformance flow.
-const SummarizePerformanceInputSchema = z.object({
+export const SummarizePerformanceInputSchema = z.object({
   questions: z.array(QuestionResultSchema),
 });
-
-// Create a TypeScript type from the Zod schema.
 export type SummarizePerformanceInput = z.infer<typeof SummarizePerformanceInputSchema>;
+
+
+export const SummarizePerformanceOutputSchema = z.object({
+    summary: z
+      .string()
+      .describe(
+        'A concise, insightful, and encouraging summary of the user\'s performance, highlighting strengths and areas for improvement based on the questions they answered correctly and incorrectly. The summary should be in markdown format.'
+      ),
+  });
+export type SummarizePerformanceOutput = z.infer<typeof SummarizePerformanceOutputSchema>;
 
 
 export type QuestionWithValidation = GenerateQuizQuestionsOutput['questions'][0] & {
@@ -88,14 +92,16 @@ export async function generateQuizFromText(
 
 export async function getPerformanceSummary(results: SummarizePerformanceInput): Promise<{ summary?: string; error?: string }> {
   try {
-    // Validate the input using the Zod schema.
-    const validatedResults = SummarizePerformanceInputSchema.parse(results);
+    const validatedInput = SummarizePerformanceInputSchema.parse(results);
     
-    const performanceResult = await summarizePerformance(validatedResults);
-    if (!performanceResult.summary) {
+    const performanceResult = await summarizePerformance(validatedInput);
+
+    const validatedOutput = SummarizePerformanceOutputSchema.parse(performanceResult);
+
+    if (!validatedOutput.summary) {
       return { error: 'Could not generate a performance summary.' };
     }
-    return { summary: performanceResult.summary };
+    return { summary: validatedOutput.summary };
   } catch (e) {
     console.error(e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';

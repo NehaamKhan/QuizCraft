@@ -10,40 +10,16 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import type { SummarizePerformanceInput, SummarizePerformanceOutput } from '@/app/actions';
 
-const QuestionResultSchema = z.object({
-  question: z.string().describe('The quiz question.'),
-  options: z.array(z.string()).describe('The multiple-choice options for the question.'),
-  correctAnswerIndex: z.number().describe('The index of the correct answer in the options array.'),
-  userAnswerIndex: z.number().optional().describe('The index of the user\'s answer.'),
-  isCorrect: z.boolean().describe('Whether the user answered the question correctly.'),
-});
-
-export const SummarizePerformanceInputSchema = z.object({
-  questions: z.array(QuestionResultSchema).describe('The user\'s quiz results.'),
-});
-export type SummarizePerformanceInput = z.infer<typeof SummarizePerformanceInputSchema>;
-
-export const SummarizePerformanceOutputSchema = z.object({
-  summary: z
-    .string()
-    .describe(
-      'A concise, insightful, and encouraging summary of the user\'s performance, highlighting strengths and areas for improvement based on the questions they answered correctly and incorrectly. The summary should be in markdown format.'
-    ),
-});
-export type SummarizePerformanceOutput = z.infer<typeof SummarizePerformanceOutputSchema>;
 
 export async function summarizePerformance(
   input: SummarizePerformanceInput
 ): Promise<SummarizePerformanceOutput> {
-  return summarizePerformanceFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'summarizePerformancePrompt',
-  input: {schema: SummarizePerformanceInputSchema},
-  output: {schema: SummarizePerformanceOutputSchema},
-  prompt: `You are an expert educator providing feedback on a quiz. Analyze the user's performance based on the following questions and their answers.
+  // Note: We are not using a structured prompt here to avoid exporting schemas
+  // from a 'use server' file, which causes Next.js build errors.
+  // The validation is handled in the calling server action.
+  const prompt = `You are an expert educator providing feedback on a quiz. Analyze the user's performance based on the following questions and their answers.
 
 Provide a concise, insightful, and encouraging summary of their performance.
 - Highlight the concepts they seem to understand well (based on correct answers).
@@ -51,29 +27,22 @@ Provide a concise, insightful, and encouraging summary of their performance.
 - Keep the tone positive and constructive.
 - Format the output as a markdown string.
 
-Here are the results:
-{{#each questions}}
----
-Question: {{{this.question}}}
-{{#if this.isCorrect}}
-Result: CORRECT
-{{else}}
-Result: INCORRECT
-User's Answer: {{{this.options.[this.userAnswerIndex]}}}
-Correct Answer: {{{this.options.[this.correctAnswerIndex]}}}
-{{/if}}
-{{/each}}
-`,
-});
+The final output should be a JSON object with a single key "summary" containing the markdown string.
 
-const summarizePerformanceFlow = ai.defineFlow(
-  {
-    name: 'summarizePerformanceFlow',
-    inputSchema: SummarizePerformanceInputSchema,
-    outputSchema: SummarizePerformanceOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+Here are the results:
+${input.questions.map(q => `---
+Question: ${q.question}
+${q.isCorrect ? 'Result: CORRECT' : `Result: INCORRECT
+User's Answer: ${q.options[q.userAnswerIndex!]}
+Correct Answer: ${q.options[q.correctAnswerIndex]}`}
+`).join('\n')}
+`;
+
+  const {output} = await ai.generate({
+    prompt,
+    model: 'googleai/gemini-2.5-flash',
+    format: 'json'
+  });
+
+  return output as SummarizePerformanceOutput;
+}
