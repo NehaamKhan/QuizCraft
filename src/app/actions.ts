@@ -16,21 +16,7 @@ const QuestionResultSchema = z.object({
   isCorrect: z.boolean(),
 });
 
-export const SummarizePerformanceInputSchema = z.object({
-  questions: z.array(QuestionResultSchema),
-});
 export type SummarizePerformanceInput = z.infer<typeof SummarizePerformanceInputSchema>;
-
-
-export const SummarizePerformanceOutputSchema = z.object({
-    summary: z
-      .string()
-      .describe(
-        'A concise, insightful, and encouraging summary of the user\'s performance, highlighting strengths and areas for improvement based on the questions they answered correctly and incorrectly. The summary should be in markdown format.'
-      ),
-  });
-export type SummarizePerformanceOutput = z.infer<typeof SummarizePerformanceOutputSchema>;
-
 
 export type QuestionWithValidation = GenerateQuizQuestionsOutput['questions'][0] & {
     validation: ValidateDifficultyRankingOutput['validationResults'][0];
@@ -91,6 +77,18 @@ export async function generateQuizFromText(
 }
 
 export async function getPerformanceSummary(results: SummarizePerformanceInput): Promise<{ summary?: string; error?: string }> {
+  const SummarizePerformanceInputSchema = z.object({
+    questions: z.array(QuestionResultSchema),
+  });
+
+  const SummarizePerformanceOutputSchema = z.object({
+    summary: z
+      .string()
+      .describe(
+        'A concise, insightful, and encouraging summary of the user\'s performance, highlighting strengths and areas for improvement based on the questions they answered correctly and incorrectly. The summary should be in markdown format.'
+      ),
+  });
+
   try {
     const validatedInput = SummarizePerformanceInputSchema.parse(results);
     

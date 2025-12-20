@@ -4,18 +4,13 @@
  * @fileOverview Generates a performance summary for a completed quiz.
  *
  * - summarizePerformance - A function that generates a performance summary.
- * - SummarizePerformanceInput - The input type for the summarizePerformance function.
- * - SummarizePerformanceOutput - The return type for the summarizePerformance function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import type { SummarizePerformanceInput, SummarizePerformanceOutput } from '@/app/actions';
-
 
 export async function summarizePerformance(
-  input: SummarizePerformanceInput
-): Promise<SummarizePerformanceOutput> {
+  input: any
+): Promise<any> {
   // Note: We are not using a structured prompt here to avoid exporting schemas
   // from a 'use server' file, which causes Next.js build errors.
   // The validation is handled in the calling server action.
@@ -30,7 +25,7 @@ Provide a concise, insightful, and encouraging summary of their performance.
 The final output should be a JSON object with a single key "summary" containing the markdown string.
 
 Here are the results:
-${input.questions.map(q => `---
+${input.questions.map((q: any) => `---
 Question: ${q.question}
 ${q.isCorrect ? 'Result: CORRECT' : `Result: INCORRECT
 User's Answer: ${q.options[q.userAnswerIndex!]}
@@ -44,5 +39,5 @@ Correct Answer: ${q.options[q.correctAnswerIndex]}`}
     format: 'json'
   });
 
-  return output as SummarizePerformanceOutput;
+  return output;
 }
