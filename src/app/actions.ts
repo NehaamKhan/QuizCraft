@@ -3,8 +3,30 @@
 import { extractConcepts } from '@/ai/flows/extract-concepts-from-text';
 import { generateQuizQuestions } from '@/ai/flows/generate-quiz-questions';
 import { validateDifficultyRanking } from '@/ai/flows/validate-difficulty-ranking';
+import { summarizePerformance } from '@/ai/flows/summarize-performance';
 import type { GenerateQuizQuestionsOutput } from '@/ai/flows/generate-quiz-questions';
 import type { ValidateDifficultyRankingOutput } from '@/ai/flows/validate-difficulty-ranking';
+import { z } from 'zod';
+
+
+// Define the Zod schema for a single question's result.
+const QuestionResultSchema = z.object({
+  question: z.string(),
+  options: z.array(z.string()),
+  correctAnswerIndex: z.number(),
+  userAnswerIndex: z.number().optional(),
+  isCorrect: z.boolean(),
+});
+
+
+// Define the Zod schema for the input of the summarizePerformance flow.
+const SummarizePerformanceInputSchema = z.object({
+  questions: z.array(QuestionResultSchema),
+});
+
+// Create a TypeScript type from the Zod schema.
+export type SummarizePerformanceInput = z.infer<typeof SummarizePerformanceInputSchema>;
+
 
 export type QuestionWithValidation = GenerateQuizQuestionsOutput['questions'][0] & {
     validation: ValidateDifficultyRankingOutput['validationResults'][0];
@@ -61,5 +83,27 @@ export async function generateQuizFromText(
     console.error(e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
     return { error: `An unexpected error occurred: ${errorMessage}` };
+  }
+}
+
+export async function getPerformanceSummary(results: SummarizePerformanceInput): Promise<{ summary?: string; error?: string }> {
+  try {
+    // Validate the input using the Zod schema.
+    const validatedResults = SummarizePerformanceInputSchema.parse(results);
+    
+    const performanceResult = await summarizePerformance(validatedResults);
+    if (!performanceResult.summary) {
+      return { error: 'Could not generate a performance summary.' };
+    }
+    return { summary: performanceResult.summary };
+  } catch (e) {
+    console.error(e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    
+    if (e instanceof z.ZodError) {
+      return { error: `Invalid data format for summary generation: ${e.issues.map(i => i.message).join(', ')}` };
+    }
+    
+    return { error: `An unexpected error occurred while generating summary: ${errorMessage}` };
   }
 }

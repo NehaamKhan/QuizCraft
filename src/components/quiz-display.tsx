@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { QuestionWithValidation } from '@/app/actions';
+import { getPerformanceSummary } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { QuizSummary } from './quiz-summary';
 
 type QuizDisplayProps = {
   questions: QuestionWithValidation[];
@@ -29,6 +31,8 @@ const difficultyColors: Record<'easy' | 'medium' | 'hard', string> = {
 export function QuizDisplay({ questions }: QuizDisplayProps) {
   const [answers, setAnswers] = useState<AnswersState>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
   const sortedQuestions = useMemo(() => {
     return [...questions].sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]);
@@ -39,8 +43,25 @@ export function QuizDisplay({ questions }: QuizDisplayProps) {
     setAnswers(prev => ({ ...prev, [questionIndex]: optionIndex }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitted(true);
+    setIsSummaryLoading(true);
+    const results = {
+      questions: questions.map((q, index) => ({
+        ...q,
+        userAnswerIndex: answers[index],
+        isCorrect: answers[index] === q.correctAnswerIndex,
+      }))
+    };
+    const summaryResult = await getPerformanceSummary(results);
+    if (summaryResult.summary) {
+      setSummary(summaryResult.summary);
+    } else {
+      // You could optionally show an error toast here
+      console.error(summaryResult.error);
+      setSummary("Sorry, we couldn't generate a summary for your performance at this time.");
+    }
+    setIsSummaryLoading(false);
   };
   
   const score = useMemo(() => {
@@ -67,6 +88,8 @@ export function QuizDisplay({ questions }: QuizDisplayProps) {
             <p className="text-4xl font-bold mt-2">Your score: {score} / {sortedQuestions.length}</p>
           </div>
         )}
+        
+        {isSubmitted && <QuizSummary summary={summary} isLoading={isSummaryLoading} />}
 
         <div className="space-y-8">
           {sortedQuestions.map((question, index) => {
