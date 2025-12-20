@@ -148,6 +148,11 @@ App runs at:
 ---
 
 # 📊 **Sample Output**
+<img width="1917" height="902" alt="Screenshot 2025-12-20 221245" src="https://github.com/user-attachments/assets/d7890b18-a239-4252-8d0a-d3049374a940" />
+<img width="1918" height="898" alt="Screenshot 2025-12-20 221724" src="https://github.com/user-attachments/assets/45c5551d-0b30-4d1d-8816-b624a38f8a36" />
+<img width="1918" height="905" alt="Screenshot 2025-12-20 221913" src="https://github.com/user-attachments/assets/5b49f834-85ad-4c9a-82e7-58b2bb85305d" />
+<img width="1918" height="907" alt="Screenshot 2025-12-20 221937" src="https://github.com/user-attachments/assets/3c0cfe04-bf62-4f2c-bbbe-de44cb3d7938" />
+
 
 ### **Extracted Concepts**
 
