@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { useEffect } from 'react';
 import { generateQuizFromText, type QuizData } from '@/app/actions';
 import { Button } from '@/components/ui/button';
@@ -75,7 +76,7 @@ function LoadingState() {
 }
 
 export function QuizGenerator() {
-  const [state, formAction] = useFormState(generateQuizFromText, initialState);
+  const [state, formAction] = useActionState(generateQuizFromText, initialState);
   const { pending } = useFormStatus();
   const { toast } = useToast();
 
