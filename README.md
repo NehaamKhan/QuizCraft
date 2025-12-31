@@ -17,6 +17,14 @@ This project showcases true **agentic behavior** through decomposition, reasonin
 
 ---
 
+## 🌐 Live Deployment
+
+The project is deployed and accessible online:
+
+👉 **Live App:** https://quiz-craft-pi.vercel.app/
+
+---
+
 # 🧠 **How It Works**
 
 ```
